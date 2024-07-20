@@ -1,9 +1,14 @@
-use std::fmt::format;
+pub mod handler;
+pub mod model;
+pub mod response;
+pub mod route;
 
 use serde::{ Deserialize, Serialize };
-use warp::Filter;
+use warp::{ reject::Rejection, Filter };
 
 use rust_embed::RustEmbed;
+
+type WebResult<T> = std::result::Result<T, Rejection>;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Query {
@@ -21,14 +26,18 @@ async fn main() {
     }
     env_logger::init();
 
-    let greet = warp::path!("vit" / "greet")
+    let greet = warp::path!("api" / "greet")
         .and(warp::query::<Query>())
         .map(|q: Query| {
             log::debug!("/vit/greet {:?}", &q);
             format!("Hello, {}!", q.name)
         });
 
-    let static_files = warp::path("api").and(warp::get()).and(warp_embed::embed(&Static)).boxed();
+    let health_checker = warp::path!("api" / "health")
+        .and(warp::get())
+        .and_then(handler::health_checker_handler);
+
+    let static_files = warp::path("vit").and(warp::get()).and(warp_embed::embed(&Static)).boxed();
 
     let cors = warp
         ::cors()
@@ -36,6 +45,8 @@ async fn main() {
         .allow_methods(vec!["GET", "POST"])
         .allow_headers(vec!["Content-Type"]);
 
-    log::info!("Serving vit on http://localhost:3030/vit");
-    warp::serve(greet.or(static_files).with(cors)).run(([127, 0, 0, 1], 3030)).await;
+    let routes = static_files.with(cors).with(warp::log("api")).or(greet).or(health_checker);
+
+    println!("🚀 Starting Vit server...");
+    warp::serve(routes).run(([0, 0, 0, 0], 3030)).await;
 }

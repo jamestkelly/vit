@@ -7,7 +7,7 @@ services:
       - vit-db-pgdata-volume:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_DB=vit_app
+      - POSTGRES_DB=vit
       - POSTGRES_PASSWORD=password
     ports:
       - "5432:5432"
@@ -18,13 +18,13 @@ services:
     ports:
       - "8888:80"
     environment:
-      - PGADMIN_DEFAULT_EMAIL=vitdev
+      - PGADMIN_DEFAULT_EMAIL=vitdev@localhost.com
       - PGADMIN_DEFAULT_PASSWORD=password
     volumes:
       - vit-pgadmin-volume:/var/lib/pgadmin
 
 volumes:
   vit-db-pgdata-volume:
-    name: haast-db-postgres-data
+    name: vit-db-postgres-data
   vit-pgadmin-volume:
-    name: haast-pgadmin-volume-data
+    name: vit-pgadmin-volume-data
